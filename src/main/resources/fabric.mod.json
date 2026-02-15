@@ -1,0 +1,45 @@
+{
+	"schemaVersion": 1,
+	"id": "ms-extras",
+	"version": "${version}",
+	"name": "MS Extras",
+	"description": "This is an example description! Tell everyone what your mod is about!",
+	"authors": [
+		"Me!"
+	],
+	"contact": {
+		"homepage": "https://fabricmc.net/",
+		"sources": "https://github.com/FabricMC/fabric-example-mod"
+	},
+	"license": "CC0-1.0",
+	"icon": "assets/ms-extras/icon.png",
+	"environment": "*",
+	"entrypoints": {
+		"main": [
+			{
+				"value": "gamchu.MSExtras",
+				"adapter": "kotlin"
+			}
+		],
+		"client": [
+			{
+				"value": "gamchu.MSExtrasClient",
+				"adapter": "kotlin"
+			}
+		]
+	},
+	"mixins": [
+		"ms-extras.mixins.json",
+		{
+			"config": "ms-extras.client.mixins.json",
+			"environment": "client"
+		}
+	],
+	"depends": {
+		"fabricloader": ">=0.18.4",
+		"minecraft": "~1.21.11",
+		"java": ">=21",
+		"fabric-api": "*",
+		"fabric-language-kotlin": "*"
+	}
+}
