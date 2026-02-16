@@ -2,10 +2,6 @@ package gamchu.pathfinder.goals
 
 import kotlin.math.abs
 
-/**
- * Goal for an exact (X, Y, Z) block position.
- * Heuristic uses octile 3D distance (admissible).
- */
 class GoalBlock(
     @JvmField val targetX: Int,
     @JvmField val targetY: Int,

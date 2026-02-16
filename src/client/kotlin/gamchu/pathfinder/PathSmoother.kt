@@ -4,24 +4,9 @@ import net.minecraft.core.BlockPos
 import kotlin.math.abs
 import kotlin.math.sqrt
 
-/**
- * Smooths raw A* paths by removing redundant waypoints.
- *
- * Pipeline (4 passes):
- * 1. Line-of-sight optimization — skip waypoints with clear LOS (up to 12 ahead)
- * 2. Zigzag removal + straightening — remove turns and oscillations (3+4 node patterns)
- * 3. Diagonal shortcuts — replace L-shapes with diagonals
- * 4. Validate + fix — ensure every segment is actually walkable
- *
- * Two modes:
- * - **Ground mode**: checks walkability along the path (requires solid ground)
- * - **3D mode**: checks passability only (for flying/swimming)
- */
 object PathSmoother {
 
     /**
-     * Main entry point: smooth a raw path into fewer, cleaner waypoints.
-     *
      * @param path Original path from A* (must have at least 2 points)
      * @param world World access for collision checks
      * @param allow3D If true, use 3D passability checks; if false, use ground walkability
@@ -31,24 +16,16 @@ object PathSmoother {
     fun smoothPath(path: List<BlockPos>, world: WorldAccess, allow3D: Boolean): List<BlockPos> {
         if (path.size <= 2) return path
 
-        // Pass 1: Line-of-sight — skip waypoints where we can walk directly
         var smoothed = smoothPassLineOfSight(path, world, allow3D)
 
-        // Pass 2: Clean zigzags + straighten (combined into one pass)
         smoothed = cleanAndStraighten(smoothed, world, allow3D)
 
-        // Pass 3: Diagonal shortcuts
         smoothed = smoothDiagonalPaths(smoothed, world, allow3D)
 
-        // Pass 4: Final validation — ensure every segment is walkable
         smoothed = validateAndFixPath(smoothed, path, world, allow3D)
 
         return smoothed
     }
-
-    // ──────────────────────────────────────────────────
-    //  Pass 1: Line-of-sight optimization
-    // ──────────────────────────────────────────────────
 
     private fun smoothPassLineOfSight(path: List<BlockPos>, world: WorldAccess, allow3D: Boolean): List<BlockPos> {
         if (path.size <= 2) return path
@@ -62,12 +39,10 @@ object PathSmoother {
             val maxSkip = minOf(12, path.size - 1 - i)
             var furthest = i + 1
 
-            // Try skipping ahead — furthest first
             for (skipDist in maxSkip downTo 2) {
                 val testIndex = i + skipDist
                 val testPos = path[testIndex]
 
-                // Don't skip across large elevation changes in ground mode
                 if (!allow3D) {
                     var maxElevChange = 0
                     for (j in i + 1..testIndex) {
@@ -90,10 +65,6 @@ object PathSmoother {
         return smoothed
     }
 
-    // ──────────────────────────────────────────────────
-    //  Pass 2: Combined zigzag removal + straightening
-    // ──────────────────────────────────────────────────
-
     private fun cleanAndStraighten(path: List<BlockPos>, world: WorldAccess, allow3D: Boolean): List<BlockPos> {
         if (path.size <= 3) return path
 
@@ -106,13 +77,11 @@ object PathSmoother {
             val current = path[i]
             val next = path[i + 1]
 
-            // Check 3-node zigzag pattern
             if (isZigzag(prev, current, next) && isWalkable(prev, next, world, allow3D)) {
                 i++
                 continue
             }
 
-            // Check 4-node zigzag pattern
             if (i + 2 < path.size) {
                 val next2 = path[i + 2]
                 if (isZigzag4Node(prev, current, next, next2) && isWalkable(prev, next2, world, allow3D)) {
@@ -121,7 +90,6 @@ object PathSmoother {
                 }
             }
 
-            // Check if waypoint is unnecessary (nearly collinear)
             if (isAlmostStraight(prev, current, next) && isWalkable(prev, next, world, allow3D)) {
                 i++
                 continue
@@ -187,10 +155,6 @@ object PathSmoother {
         return abs(dx1 * dz2 - dz1 * dx2) <= 1
     }
 
-    // ──────────────────────────────────────────────────
-    //  Pass 3: Diagonal shortcuts
-    // ──────────────────────────────────────────────────
-
     private fun smoothDiagonalPaths(path: List<BlockPos>, world: WorldAccess, allow3D: Boolean): List<BlockPos> {
         if (path.size <= 3) return path
 
@@ -233,10 +197,6 @@ object PathSmoother {
         return smoothed
     }
 
-    // ──────────────────────────────────────────────────
-    //  Pass 4: Validation
-    // ──────────────────────────────────────────────────
-
     private fun validateAndFixPath(
         path: List<BlockPos>,
         originalPath: List<BlockPos>,
@@ -259,7 +219,6 @@ object PathSmoother {
                 if (intermediate.isNotEmpty()) {
                     validated.addAll(intermediate)
                 } else {
-                    // Last resort: just add the destination and hope the walker can handle it
                     validated.add(to)
                 }
             }
@@ -277,7 +236,6 @@ object PathSmoother {
     ): List<BlockPos> {
         val result = mutableListOf<BlockPos>()
 
-        // Try to find a walkable chain through original path waypoints
         var fromIdx = -1
         var toIdx = -1
         for (i in originalPath.indices) {
@@ -286,7 +244,6 @@ object PathSmoother {
         }
 
         if (fromIdx >= 0 && toIdx >= 0 && toIdx > fromIdx) {
-            // Re-insert original intermediate waypoints
             for (i in (fromIdx + 1) until toIdx) {
                 result.add(originalPath[i])
             }
@@ -296,14 +253,6 @@ object PathSmoother {
         return result
     }
 
-    // ──────────────────────────────────────────────────
-    //  Helper methods
-    // ──────────────────────────────────────────────────
-
-    /**
-     * Check if there's a collision-free straight line between two positions (lenient version).
-     * Uses 3D DDA ray traversal with some tolerance for minor obstacles.
-     */
     private fun hasLineOfSightLenient(from: BlockPos, to: BlockPos, world: WorldAccess, allow3D: Boolean): Boolean {
         val dx = to.x - from.x
         val dy = to.y - from.y
@@ -337,9 +286,6 @@ object PathSmoother {
         return true
     }
 
-    /**
-     * Check if a single position is walkable/passable.
-     */
     private fun isPositionWalkable(pos: BlockPos, world: WorldAccess, allow3D: Boolean): Boolean {
         return if (allow3D) {
             world.isPassable(pos.x, pos.y, pos.z) && world.isPassable(pos.x, pos.y + 1, pos.z)
@@ -348,16 +294,12 @@ object PathSmoother {
         }
     }
 
-    /**
-     * Check if movement between two positions is valid.
-     */
     private fun isWalkable(from: BlockPos, to: BlockPos, world: WorldAccess, allow3D: Boolean): Boolean {
         // Check both positions are walkable
         if (!isPositionWalkable(from, world, allow3D) || !isPositionWalkable(to, world, allow3D)) {
             return false
         }
 
-        // For adjacent moves, just check endpoints
         val dx = abs(to.x - from.x)
         val dy = abs(to.y - from.y)
         val dz = abs(to.z - from.z)
@@ -366,7 +308,6 @@ object PathSmoother {
             return true
         }
 
-        // For longer moves, check line of sight
         return hasLineOfSightLenient(from, to, world, allow3D)
     }
 }

@@ -1,11 +1,5 @@
 package gamchu.pathfinder
 
-/**
- * Custom binary min-heap for A* open set, ordered by [PathNode.fCost].
- *
- * Supports O(log n) insert, poll, and decrease-key (via heap index tracking).
- * Pre-allocates backing array and grows as needed — no per-operation allocation.
- */
 class BinaryHeapOpenSet(initialCapacity: Int = 1024) {
     private var heap: Array<PathNode?> = arrayOfNulls(initialCapacity)
     var size: Int = 0
@@ -36,10 +30,6 @@ class BinaryHeapOpenSet(initialCapacity: Int = 1024) {
         return min
     }
 
-    /**
-     * Notify the heap that the fCost of [node] has decreased.
-     * The node must already be in the heap.
-     */
     fun decreaseKey(node: PathNode) {
         siftUp(node.heapIndex)
     }

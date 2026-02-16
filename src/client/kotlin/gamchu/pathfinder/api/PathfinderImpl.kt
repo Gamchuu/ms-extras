@@ -11,12 +11,6 @@ import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
 
-/**
- * Async pathfinder implementation.
- *
- * Runs A* on a dedicated single-thread executor to keep the render/tick
- * threads completely free. World data is read from the ClientLevel.
- */
 class PathfinderImpl : IPathfinder {
 
     /** Single-thread executor for pathfinding — A* is inherently sequential. */

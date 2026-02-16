@@ -4,13 +4,7 @@ import gamchu.pathfinder.PathResult
 import gamchu.pathfinder.goals.Goal
 import java.util.concurrent.CompletableFuture
 
-/**
- * Public pathfinder interface, accessible via Minescript's JavaClass.
- * All pathfinding is async — returns CompletableFuture to avoid freezing the game.
- */
 interface IPathfinder {
-
-    // --- From player position ---
 
     /** Pathfind from the player's current position (ground mode). */
     fun findPathAsync(goal: Goal): CompletableFuture<PathResult>

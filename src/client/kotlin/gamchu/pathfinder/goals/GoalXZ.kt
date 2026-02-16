@@ -4,10 +4,6 @@ import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.sqrt
 
-/**
- * Goal that matches any Y-level at a specific (X, Z) coordinate.
- * Heuristic uses Chebyshev distance (admissible for 8-directional movement).
- */
 class GoalXZ(
     @JvmField val targetX: Int,
     @JvmField val targetZ: Int
