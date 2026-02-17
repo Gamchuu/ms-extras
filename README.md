@@ -154,26 +154,6 @@ future = pathfinder.findSmoothedPathAsync(goal)
 future = pathfinder.findSmoothedPathAsync(goal, 200000)
 ```
 
-### Regular vs. Smoothed Paths
-
-Compare the difference:
-
-```python
-# Regular A* path (all waypoints)
-regularFuture = pathfinder.findPathAsync(goal)
-regularResult = regularFuture.get()
-
-# Smoothed path (optimized waypoints)
-smoothedFuture = pathfinder.findSmoothedPathAsync(goal)
-smoothedResult = smoothedFuture.get()
-
-echo(f"Regular: {regularResult.getPathSize()} waypoints")
-echo(f"Smoothed: {smoothedResult.getPathSize()} waypoints")
-echo(f"Reduction: {100 - (smoothedResult.getPathSize() * 100 / regularResult.getPathSize()):.1f}%")
-```
-
----
-
 ## API Reference
 
 ### PathfinderAPI Methods
@@ -314,6 +294,30 @@ if result.getSuccess():
     echo("Path visualization complete!")
 ```
 
+### Example 3: 3D Pathfinding (Flying/Swimming)
+
+```python
+from minescript import echo
+
+PathfinderAPI = JavaClass("gamchu.pathfinder.api.PathfinderAPI")
+GoalBlock = JavaClass("gamchu.pathfinder.goals.GoalBlock")
+
+pathfinder = PathfinderAPI.getProvider().getPathfinder()
+
+# Use 3D mode for flying or swimming navigation
+goal = GoalBlock(100, 80, 200)
+future = pathfinder.findSmoothedPathAsync3D(goal)
+result = future.get()
+
+if result.getSuccess():
+    echo(f"3D path found with {result.getPathSize()} waypoints")
+    for i in range(result.getPathSize()):
+        pos = result.getPathPoint(i)
+        echo(f"  {i}: ({pos.getX()}, {pos.getY()}, {pos.getZ()})")
+else:
+    echo("No 3D path found")
+```
+
 ### Example 4: Path from Custom Start
 
 ```python
@@ -391,63 +395,48 @@ else:
     echo("No path exists even with higher limits")
 ```
 
-### Example 7: Compare Regular vs. Smoothed
+## Performance Tips
+
+
+### 1. Tune the Node Limit to Your Needs
 
 ```python
-from minescript import echo
+# Short distances (< 100 blocks): lower limit is fine
+future = pathfinder.findSmoothedPathAsync(goal, 25000)
 
-PathfinderAPI = JavaClass("gamchu.pathfinder.api.PathfinderAPI")
-GoalBlock = JavaClass("gamchu.pathfinder.goals.GoalBlock")
+# Medium distances: use the default
+future = pathfinder.findSmoothedPathAsync(goal)
 
-pathfinder = PathfinderAPI.getProvider().getPathfinder()
-goal = GoalBlock(100, 64, 200)
-
-# Get regular path
-echo("Computing regular path...")
-regularFuture = pathfinder.findPathAsync(goal)
-regularResult = regularFuture.get()
-
-# Get smoothed path
-echo("Computing smoothed path...")
-smoothedFuture = pathfinder.findSmoothedPathAsync(goal)
-smoothedResult = smoothedFuture.get()
-
-if regularResult.getSuccess() and smoothedResult.getSuccess():
-    regularSize = regularResult.getPathSize()
-    smoothedSize = smoothedResult.getPathSize()
-    reduction = 100 - (smoothedSize * 100 / regularSize)
-    
-    echo(f"Regular path:  {regularSize} waypoints")
-    echo(f"Smoothed path: {smoothedSize} waypoints")
-    echo(f"Reduction:     {reduction:.1f}%")
-    
-    echo("\nFirst 5 waypoints (regular):")
-    for i in range(min(5, regularSize)):
-        pos = regularResult.getPathPoint(i)
-        echo(f"  {i}: ({pos.getX()}, {pos.getY()}, {pos.getZ()})")
-    
-    echo("\nFirst 5 waypoints (smoothed):")
-    for i in range(min(5, smoothedSize)):
-        pos = smoothedResult.getPathPoint(i)
-        echo(f"  {i}: ({pos.getX()}, {pos.getY()}, {pos.getZ()})")
+# Long distances or complex terrain: raise the limit
+future = pathfinder.findSmoothedPathAsync(goal, 200000)
 ```
 
----
-
-
-### 3. Cancel Unnecessary Operations
+### 2. Cancel Unnecessary Operations
 
 ```python
-# Before starting new pathfinding, cancel old one
+# Before starting new pathfinding, cancel the old one
 if pathfinder.isPathing():
     pathfinder.cancel()
 
 future = pathfinder.findSmoothedPathAsync(goal)
 ```
 
-### 5. Batch Multiple Requests
+### 3. Use Waypoints for Very Distant Goals
 
-If you need paths to multiple locations, compute them sequentially:
+```python
+# Instead of one huge search, chain shorter ones
+midGoal = GoalBlock(halfway_x, halfway_y, halfway_z)
+future1 = pathfinder.findSmoothedPathAsync(midGoal)
+result1 = future1.get()
+
+finalGoal = GoalBlock(dest_x, dest_y, dest_z)
+future2 = pathfinder.findSmoothedPathAsync(halfway_x, halfway_y, halfway_z, finalGoal)
+result2 = future2.get()
+```
+
+### 4. Batch Multiple Requests Sequentially
+
+If you need paths to multiple locations, compute them one at a time:
 
 ```python
 goals = [GoalBlock(100, 64, 100), GoalBlock(200, 64, 200), GoalBlock(300, 64, 300)]
@@ -533,20 +522,6 @@ if result.getSuccess():
             # Find alternative route or add waypoints
 ```
 
-### Problem: Path has weird angles or movements
-
-**Causes:**
-- You're using regular paths instead of smoothed paths
-
-**Solution:**
-```python
-# ✗ Don't use regular paths
-# future = pathfinder.findPathAsync(goal)
-
-# ✓ Use smoothed paths
-future = pathfinder.findSmoothedPathAsync(goal)
-```
-
 ### Problem: Script crashes with "NullPointerException"
 
 **Causes:**
@@ -575,4 +550,4 @@ except Exception as e:
 ## Credits
 
 Based on A* pathfinding with optimizations inspired by Baritone.
-AI was used to genereate parts of this documentation.
+AI was used to generate parts of this documentation.
