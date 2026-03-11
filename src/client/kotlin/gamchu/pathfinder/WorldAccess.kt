@@ -12,7 +12,8 @@ class WorldAccess(private val level: ClientLevel) {
     @Volatile private var cachedChunk: LevelChunk? = null
 
     fun getBlockState(x: Int, y: Int, z: Int): BlockState? {
-        if (y < level.minY || y >= level.maxY) return null
+        // Korrekte API für 1.21+
+        if (y < level.minBuildHeight || y >= level.maxBuildHeight) return null
 
         val chunkX = x shr 4
         val chunkZ = z shr 4

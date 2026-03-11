@@ -24,7 +24,7 @@ object PackedPos {
 
     @JvmStatic
     fun unpackX(packed: Long): Int = (packed shr (Y_BITS + Z_BITS)).toInt()
-        .
+
     @JvmStatic
     fun unpackY(packed: Long): Int = (packed shl (64 - Y_BITS) shr (64 - Y_BITS)).toInt()
 
