@@ -1,10 +1,9 @@
 {
 	"required": true,
-	"package": "gamchu.mixin.client",
+	"package": "gamchu.mixin.mixins",
 	"compatibilityLevel": "JAVA_21",
-	"client": [
-		"ExampleClientMixin"
-	],
+	"plugin": "gamchu.mixin.init.MixinAutoDiscover",
+	"client": [],
 	"injectors": {
 		"defaultRequire": 1
 	}
